@@ -76,7 +76,14 @@ const Login = () => {
                     </button>
                 </form>
 
-                
+
+            </div>
+
+            {/* Copyright */}
+            <div className="copyright">
+                <small>
+                    © 2026 Version 1.0.0 - ELT Technology
+                </small>
             </div>
         </div>
     );

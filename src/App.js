@@ -3,8 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import Login from './components/Auth/Login';
 import Dashboard from './pages/Dashboard';
-import DailyReport from './pages/DailyReport';
+import UnifiedReport from './pages/UnifiedReport';
+import AnnualPlan from './pages/AnnualPlan';
 import AdminPanel from './pages/AdminPanel';
+
 import OfficeKPIs from './components/OfficeKPIs/OfficeKPIs';
 import Reporting from './components/Reporting/Reporting';
 import './App.css';
@@ -33,15 +35,23 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard language={language} />
+                <Dashboard language={language} toggleLanguage={toggleLanguage} />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/report/daily"
+            path="/report"
             element={
               <ProtectedRoute>
-                <DailyReport language={language} />
+                <UnifiedReport language={language} toggleLanguage={toggleLanguage} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/annual-plan"
+            element={
+              <ProtectedRoute>
+                <AnnualPlan language={language} toggleLanguage={toggleLanguage} />
               </ProtectedRoute>
             }
           />
@@ -49,7 +59,7 @@ function App() {
             path="/admin"
             element={
               <ProtectedRoute requiredRole="admin">
-                <AdminPanel language={language} />
+                <AdminPanel language={language} toggleLanguage={toggleLanguage} />
               </ProtectedRoute>
             }
           />
@@ -57,7 +67,7 @@ function App() {
             path="/office/:officeId"
             element={
               <ProtectedRoute>
-                <OfficeKPIs language={language} />
+                <OfficeKPIs language={language} toggleLanguage={toggleLanguage} />
               </ProtectedRoute>
             }
           />
@@ -65,11 +75,12 @@ function App() {
             path="/reports"
             element={
               <ProtectedRoute>
-                <Reporting language={language} />
+                <Reporting language={language} toggleLanguage={toggleLanguage} />
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </Router>

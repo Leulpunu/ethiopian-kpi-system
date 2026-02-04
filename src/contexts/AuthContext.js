@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
             position_en: 'Executive Manager',
             office: 'executive',
             role: 'admin',
-            accessibleOffices: ['work-skills', 'urban-agriculture', 'trade', 'peace-security', 'finance', 'community-governance', 'civil-registration']
+            accessibleOffices: ['work-skills', 'urban-agriculture', 'trade', 'peace-security', 'finance', 'community-governance', 'civil-registration', 'public-service-hr-development']
         },
         {
             id: 2,
@@ -180,13 +180,39 @@ export const AuthProvider = ({ children }) => {
         return newUser;
     };
 
+    // Change password function
+    const changePassword = (currentPassword, newPassword) => {
+        if (!user) {
+            return { success: false, error: 'No user logged in' };
+        }
+
+        const users = getUsers();
+        const userIndex = users.findIndex(u => u.id === user.id);
+
+        if (userIndex === -1) {
+            return { success: false, error: 'User not found' };
+        }
+
+        // Verify current password
+        if (users[userIndex].password !== currentPassword) {
+            return { success: false, error: 'Current password is incorrect' };
+        }
+
+        // Update password
+        users[userIndex].password = newPassword;
+        saveUsers(users);
+
+        return { success: true };
+    };
+
     const value = {
         user,
         isAuthenticated,
         loading,
         login,
         logout,
-        createUser
+        createUser,
+        changePassword
     };
 
     return (

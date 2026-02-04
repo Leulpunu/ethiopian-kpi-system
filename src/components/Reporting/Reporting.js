@@ -10,6 +10,7 @@ import './Reporting.css';
 const Reporting = ({ language }) => {
   const [reports, setReports] = useState([]);
   const [feedbackModal, setFeedbackModal] = useState({ show: false, reportId: null, feedback: '' });
+  const [expandedReports, setExpandedReports] = useState(new Set());
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -84,6 +85,33 @@ const Reporting = ({ language }) => {
     });
   };
 
+  const downloadReport = (report) => {
+    // Create a detailed report object for download
+    const reportDetails = {
+      id: report.id,
+      date: report.timestamp,
+      type: report.type,
+      office: report.officeId,
+      task: report.taskId,
+      user: report.userName,
+      data: report.data,
+      notes: report.notes || '',
+      feedback: report.feedback || '',
+      feedbackBy: report.feedbackBy || ''
+    };
+
+    // Convert to JSON and download
+    const dataStr = JSON.stringify(reportDetails, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+    const exportFileDefaultName = `kpi-report-${report.type}-${report.id}.json`;
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
   const openFeedbackModal = (reportId) => {
     setFeedbackModal({ show: true, reportId, feedback: '' });
   };
@@ -122,6 +150,16 @@ const Reporting = ({ language }) => {
     closeFeedbackModal();
   };
 
+  const toggleReportExpansion = (reportId) => {
+    const newExpanded = new Set(expandedReports);
+    if (newExpanded.has(reportId)) {
+      newExpanded.delete(reportId);
+    } else {
+      newExpanded.add(reportId);
+    }
+    setExpandedReports(newExpanded);
+  };
+
   return (
     <div className="reporting">
       <div className="reporting-header">
@@ -147,6 +185,7 @@ const Reporting = ({ language }) => {
           <table>
             <thead>
               <tr>
+                <th></th>
                 <th>{t.date}</th>
                 <th>{t.office}</th>
                 <th>{t.task}</th>
@@ -157,30 +196,99 @@ const Reporting = ({ language }) => {
             </thead>
             <tbody>
               {reports.map((report, index) => (
-                <tr key={index}>
-                  <td>{new Date(report.date).toLocaleDateString()}</td>
-                  <td>{report.officeName}</td>
-                  <td>{report.taskName}</td>
-                  <td>{report.kpiName}</td>
-                  <td>{report.value}</td>
-                  {user && user.role === 'admin' && (
+                <React.Fragment key={index}>
+                  <tr>
                     <td>
-                      {report.feedback ? (
-                        <div className="feedback-display">
-                          <span>{report.feedback}</span>
-                          <small>({report.feedbackBy})</small>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => openFeedbackModal(report.id)}
-                          className="btn-secondary btn-small"
-                        >
-                          {t.provideFeedback}
-                        </button>
-                      )}
+                      <button
+                        className="expand-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleReportExpansion(report.id);
+                        }}
+                        title={expandedReports.has(report.id) ? 'Collapse details' : 'Expand details'}
+                      >
+                        <i className={`fas fa-chevron-down expand-icon ${expandedReports.has(report.id) ? 'expanded' : ''}`}></i>
+                      </button>
                     </td>
+                    <td onClick={() => downloadReport(report)} style={{ cursor: 'pointer' }}>
+                      {new Date(report.timestamp).toLocaleDateString()}
+                    </td>
+                    <td onClick={() => downloadReport(report)} style={{ cursor: 'pointer' }}>
+                      {officesData.find(o => o.id === report.officeId)?.name_am || report.officeId}
+                    </td>
+                    <td onClick={() => downloadReport(report)} style={{ cursor: 'pointer' }}>
+                      {(() => {
+                        const office = officesData.find(o => o.id === report.officeId);
+                        const task = office?.tasks.find(t => t.id === report.taskId);
+                        return task ? `${task.number_am} - ${language === 'am' ? task.title_am : task.title_en}` : report.taskId;
+                      })()}
+                    </td>
+                    <td onClick={() => downloadReport(report)} style={{ cursor: 'pointer' }}>
+                      {(() => {
+                        const office = officesData.find(o => o.id === report.officeId);
+                        const task = office?.tasks.find(t => t.id === report.taskId);
+                        const kpis = Object.keys(report.data || {});
+                        return kpis.length > 0 ? kpis.map(kpiId => {
+                          const kpi = task?.kpis.find(k => k.id === kpiId);
+                          return kpi ? (language === 'am' ? kpi.name_am : kpi.name_en) : kpiId;
+                        }).join(', ') : 'N/A';
+                      })()}
+                    </td>
+                    <td onClick={() => downloadReport(report)} style={{ cursor: 'pointer' }}>
+                      {Object.values(report.data || {}).map(d => d.value || 0).join(', ')}
+                    </td>
+                    {user && user.role === 'admin' && (
+                      <td onClick={(e) => e.stopPropagation()}>
+                        {report.feedback ? (
+                          <div className="feedback-display">
+                            <span>{report.feedback}</span>
+                            <small>({report.feedbackBy})</small>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openFeedbackModal(report.id);
+                            }}
+                            className="btn-secondary btn-small"
+                          >
+                            {t.provideFeedback}
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                  {expandedReports.has(report.id) && (
+                    <tr>
+                      <td colSpan={user && user.role === 'admin' ? 7 : 6}>
+                        <div className="report-details">
+                          <div className="detail-row">
+                            <span className="detail-label">{language === 'am' ? 'የሪፖርት አይዲ' : 'Report ID'}:</span>
+                            <span className="detail-value">{report.id}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">{language === 'am' ? 'የሪፖርት አይነት' : 'Report Type'}:</span>
+                            <span className="detail-value">{report.type}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">{language === 'am' ? 'ተጠቃሚ' : 'User'}:</span>
+                            <span className="detail-value">{report.userName}</span>
+                          </div>
+                          {report.notes && (
+                            <div className="detail-row">
+                              <span className="detail-label">{language === 'am' ? 'ማስታወሻዎች' : 'Notes'}:</span>
+                              <span className="detail-value">{report.notes}</span>
+                            </div>
+                          )}
+                          <div className="detail-row">
+                            <span className="detail-label">{language === 'am' ? 'የተላከበት ጊዜ' : 'Submitted At'}:</span>
+                            <span className="detail-value">{new Date(report.timestamp).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
                   )}
-                </tr>
+                </React.Fragment>
               ))}
             </tbody>
           </table>

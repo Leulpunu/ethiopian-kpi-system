@@ -8,7 +8,7 @@ import '../styles/AdminPanel.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
 
-const AdminPanel = ({ language }) => {
+const AdminPanel = ({ language, toggleLanguage }) => {
     const { createUser } = useAuth();
     const [reports, setReports] = useState([]);
     const [users, setUsers] = useState([]);
@@ -22,7 +22,8 @@ const AdminPanel = ({ language }) => {
         position_am: '',
         position_en: '',
         office: '',
-        role: 'user'
+        role: 'user',
+        accessibleOffices: []
     });
 
     useEffect(() => {
@@ -35,10 +36,36 @@ const AdminPanel = ({ language }) => {
         setUsers(savedUsers);
     }, []);
 
+    // Filter reports based on time range
+    const filterReportsByTimeRange = (reports) => {
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+        return reports.filter(report => {
+            const reportDate = new Date(report.date);
+            switch (timeRange) {
+                case 'daily':
+                    return reportDate >= startOfDay;
+                case 'weekly':
+                    return reportDate >= startOfWeek;
+                case 'monthly':
+                    return reportDate >= startOfMonth;
+                case 'yearly':
+                    return reportDate >= startOfYear;
+                default:
+                    return true;
+            }
+        });
+    };
+
     // Calculate office performance
     const calculateOfficePerformance = () => {
+        const filteredReports = filterReportsByTimeRange(reports);
         return officesData.map(office => {
-            const officeReports = reports.filter(r => r.officeId === office.id);
+            const officeReports = filteredReports.filter(r => r.officeId === office.id);
             let totalProgress = 0;
             let kpiCount = 0;
 
@@ -82,8 +109,8 @@ const AdminPanel = ({ language }) => {
 
     // Handle user creation
     const handleCreateUser = () => {
-        if (!newUser.username || !newUser.password || !newUser.name || !newUser.office) {
-            alert(language === 'am' ? 'እባክዎ ሁሉንም አስፈላጊ ቦታዎች ያስገቡ' : 'Please fill in all required fields');
+        if (!newUser.username || !newUser.password || !newUser.name || !newUser.office || newUser.accessibleOffices.length === 0) {
+            alert(language === 'am' ? 'እባክዎ ሁሉንም አስፈላጊ ቦታዎች ያስገቡ እና ቢሮዎችን ይምረጡ' : 'Please fill in all required fields and select at least one accessible office');
             return;
         }
 
@@ -97,12 +124,23 @@ const AdminPanel = ({ language }) => {
                 position_am: '',
                 position_en: '',
                 office: '',
-                role: 'user'
+                role: 'user',
+                accessibleOffices: []
             });
             setShowUserForm(false);
             alert(language === 'am' ? 'ተጠቃሚ ተሳክቷል!' : 'User created successfully!');
         } catch (error) {
             alert(language === 'am' ? 'ተጠቃሚ መፍጠር አልተሳካም' : 'Failed to create user');
+        }
+    };
+
+    // Handle user deletion
+    const handleDeleteUser = (userId) => {
+        if (window.confirm(language === 'am' ? 'እርግጠኛ ነዎት ይህን ተጠቃሚ መሰረዝ ይፈልጋሉ?' : 'Are you sure you want to delete this user?')) {
+            const updatedUsers = users.filter(user => user.id !== userId);
+            setUsers(updatedUsers);
+            localStorage.setItem('users', JSON.stringify(updatedUsers));
+            alert(language === 'am' ? 'ተጠቃሚ ተሰረዘ!' : 'User deleted successfully!');
         }
     };
 
@@ -158,10 +196,12 @@ const AdminPanel = ({ language }) => {
                         return (
                             <div key={user.id} className="user-card">
                                 <div className="user-avatar">
-                                    {user.name.charAt(0)}
+                                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                                 </div>
                                 <div className="user-info">
-                                    <h4>{user.name}</h4>
+                                    <h4>{user.name || 'Unknown User'}</h4>
+                                    <p><strong>{language === 'am' ? 'የተጠቃሚ ስም' : 'Username'}:</strong> {user.username}</p>
+                                    <p><strong>{language === 'am' ? 'የይለፍ ቃል' : 'Password'}:</strong> {user.password}</p>
                                     <p>{language === 'am' ? user.position_am : user.position_en}</p>
                                     <p className="user-stats">
                                         {language === 'am' ? 'ሪፖርቶች' : 'Reports'}: {userReports.length}
@@ -169,6 +209,14 @@ const AdminPanel = ({ language }) => {
                                     <p className="last-active">
                                         {language === 'am' ? 'የመጨረሻ ሪፖርት' : 'Last report'}: {lastReport}
                                     </p>
+                                    <div className="user-actions">
+                                        <button
+                                            className="btn-danger"
+                                            onClick={() => handleDeleteUser(user.id)}
+                                        >
+                                            {language === 'am' ? 'ሰርዝ' : 'Delete'}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -304,6 +352,35 @@ const AdminPanel = ({ language }) => {
                                     <option value="user">{language === 'am' ? 'ተጠቃሚ' : 'User'}</option>
                                     <option value="admin">{language === 'am' ? 'አስተያየት ሰጪ' : 'Administrator'}</option>
                                 </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>{language === 'am' ? 'የሚያገኙበት ቢሮዎች' : 'Accessible Offices'}</label>
+                                <div className="checkbox-group">
+                                    {officesData.map(office => (
+                                        <label key={office.id} className="checkbox-label">
+                                            <input
+                                                type="checkbox"
+                                                checked={newUser.accessibleOffices.includes(office.id)}
+                                                onChange={(e) => {
+                                                    const officeId = office.id;
+                                                    if (e.target.checked) {
+                                                        setNewUser({
+                                                            ...newUser,
+                                                            accessibleOffices: [...newUser.accessibleOffices, officeId]
+                                                        });
+                                                    } else {
+                                                        setNewUser({
+                                                            ...newUser,
+                                                            accessibleOffices: newUser.accessibleOffices.filter(id => id !== officeId)
+                                                        });
+                                                    }
+                                                }}
+                                            />
+                                            {language === 'am' ? office.name_am : office.name_en}
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="form-actions">

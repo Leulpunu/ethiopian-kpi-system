@@ -1,24 +1,24 @@
-// src/pages/DailyReport.js
+// src/pages/YearlyReport.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { officesData } from '../data/offices';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/ReportForm.css';
 
-const DailyReport = ({ language }) => {
+const YearlyReport = ({ language }) => {
     const { user } = useAuth();
     const [selectedOffice, setSelectedOffice] = useState('');
     const [selectedTask, setSelectedTask] = useState('');
     const [reportData, setReportData] = useState({});
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [year, setYear] = useState(new Date().getFullYear().toString());
     const navigate = useNavigate();
 
     const translations = {
         am: {
-            title: 'ዕለታዊ ሪፖርት',
+            title: 'አመታዊ ሪፖርት',
             selectOffice: 'ቢሮ ይምረጡ',
             selectTask: 'ተግባር ይምረጡ',
-            date: 'ቀን',
+            year: 'አመት',
             value: 'ዋጋ',
             unit: 'አሃድ',
             target: 'ዒላማ',
@@ -28,10 +28,10 @@ const DailyReport = ({ language }) => {
             cancel: 'ሰርዝ'
         },
         en: {
-            title: 'Daily Report',
+            title: 'Yearly Report',
             selectOffice: 'Select Office',
             selectTask: 'Select Task',
-            date: 'Date',
+            year: 'Year',
             value: 'Value',
             unit: 'Unit',
             target: 'Target',
@@ -51,7 +51,7 @@ const DailyReport = ({ language }) => {
             [kpiId]: {
                 ...prev[kpiId],
                 value: parseFloat(value) || 0,
-                date: date,
+                year: year,
                 reportedBy: user.id
             }
         }));
@@ -62,13 +62,15 @@ const DailyReport = ({ language }) => {
 
         const report = {
             id: Date.now(),
-            date: date,
+            date: year + '-01-01',
+            year: year,
             officeId: selectedOffice,
             taskId: selectedTask,
             userId: user.id,
             userName: user.name,
             data: reportData,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            type: 'yearly'
         };
 
         // Save to localStorage or send to API
@@ -98,11 +100,13 @@ const DailyReport = ({ language }) => {
 
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label>{t.date}</label>
+                    <label>{t.year}</label>
                     <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        type="number"
+                        value={year}
+                        onChange={(e) => setYear(e.target.value)}
+                        min="2020"
+                        max="2030"
                         required
                     />
                 </div>
@@ -212,4 +216,4 @@ const DailyReport = ({ language }) => {
     );
 };
 
-export default DailyReport;
+export default YearlyReport;

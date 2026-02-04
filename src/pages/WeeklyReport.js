@@ -1,24 +1,33 @@
-// src/pages/DailyReport.js
+// src/pages/WeeklyReport.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { officesData } from '../data/offices';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/ReportForm.css';
 
-const DailyReport = ({ language }) => {
+const WeeklyReport = ({ language, toggleLanguage }) => {
     const { user } = useAuth();
     const [selectedOffice, setSelectedOffice] = useState('');
     const [selectedTask, setSelectedTask] = useState('');
     const [reportData, setReportData] = useState({});
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [weekStart, setWeekStart] = useState('');
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Calculate the start of the current week (Monday)
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday
+        const monday = new Date(today.setDate(diff));
+        setWeekStart(monday.toISOString().split('T')[0]);
+    }, []);
 
     const translations = {
         am: {
-            title: 'ዕለታዊ ሪፖርት',
+            title: 'ሳምንታዊ ሪፖርት',
             selectOffice: 'ቢሮ ይምረጡ',
             selectTask: 'ተግባር ይምረጡ',
-            date: 'ቀን',
+            weekStart: 'ሳምንት መጀመሪያ ቀን',
             value: 'ዋጋ',
             unit: 'አሃድ',
             target: 'ዒላማ',
@@ -28,10 +37,10 @@ const DailyReport = ({ language }) => {
             cancel: 'ሰርዝ'
         },
         en: {
-            title: 'Daily Report',
+            title: 'Weekly Report',
             selectOffice: 'Select Office',
             selectTask: 'Select Task',
-            date: 'Date',
+            weekStart: 'Week Start Date',
             value: 'Value',
             unit: 'Unit',
             target: 'Target',
@@ -51,7 +60,7 @@ const DailyReport = ({ language }) => {
             [kpiId]: {
                 ...prev[kpiId],
                 value: parseFloat(value) || 0,
-                date: date,
+                weekStart: weekStart,
                 reportedBy: user.id
             }
         }));
@@ -62,13 +71,15 @@ const DailyReport = ({ language }) => {
 
         const report = {
             id: Date.now(),
-            date: date,
+            date: weekStart,
+            weekStart: weekStart,
             officeId: selectedOffice,
             taskId: selectedTask,
             userId: user.id,
             userName: user.name,
             data: reportData,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            type: 'weekly'
         };
 
         // Save to localStorage or send to API
@@ -82,27 +93,15 @@ const DailyReport = ({ language }) => {
 
     return (
         <div className="report-form">
-            <div className="report-header">
-                <button onClick={() => navigate('/')} className="btn-secondary back-button">
-                    <i className="fas fa-arrow-left"></i> {language === 'am' ? 'ወደ ዳሽቦርድ ተመለስ' : 'Back to Dashboard'}
-                </button>
-                <h1>{t.title}</h1>
-                <button
-                    onClick={toggleLanguage}
-                    className="language-toggle"
-                    title={language === 'am' ? 'Switch to English' : 'አማርኛ ቀይር'}
-                >
-                    {language === 'am' ? 'EN' : 'አማ'}
-                </button>
-            </div>
+            <h1>{t.title}</h1>
 
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label>{t.date}</label>
+                    <label>{t.weekStart}</label>
                     <input
                         type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        value={weekStart}
+                        onChange={(e) => setWeekStart(e.target.value)}
                         required
                     />
                 </div>
@@ -212,4 +211,4 @@ const DailyReport = ({ language }) => {
     );
 };
 
-export default DailyReport;
+export default WeeklyReport;

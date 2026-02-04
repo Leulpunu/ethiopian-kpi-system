@@ -1,24 +1,24 @@
-// src/pages/DailyReport.js
+// src/pages/MonthlyReport.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { officesData } from '../data/offices';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/ReportForm.css';
 
-const DailyReport = ({ language }) => {
+const MonthlyReport = ({ language, toggleLanguage }) => {
     const { user } = useAuth();
     const [selectedOffice, setSelectedOffice] = useState('');
     const [selectedTask, setSelectedTask] = useState('');
     const [reportData, setReportData] = useState({});
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
     const navigate = useNavigate();
 
     const translations = {
         am: {
-            title: 'ዕለታዊ ሪፖርት',
+            title: 'ወርሃዊ ሪፖርት',
             selectOffice: 'ቢሮ ይምረጡ',
             selectTask: 'ተግባር ይምረጡ',
-            date: 'ቀን',
+            month: 'ወር',
             value: 'ዋጋ',
             unit: 'አሃድ',
             target: 'ዒላማ',
@@ -28,10 +28,10 @@ const DailyReport = ({ language }) => {
             cancel: 'ሰርዝ'
         },
         en: {
-            title: 'Daily Report',
+            title: 'Monthly Report',
             selectOffice: 'Select Office',
             selectTask: 'Select Task',
-            date: 'Date',
+            month: 'Month',
             value: 'Value',
             unit: 'Unit',
             target: 'Target',
@@ -51,7 +51,7 @@ const DailyReport = ({ language }) => {
             [kpiId]: {
                 ...prev[kpiId],
                 value: parseFloat(value) || 0,
-                date: date,
+                month: month,
                 reportedBy: user.id
             }
         }));
@@ -62,13 +62,15 @@ const DailyReport = ({ language }) => {
 
         const report = {
             id: Date.now(),
-            date: date,
+            date: month + '-01',
+            month: month,
             officeId: selectedOffice,
             taskId: selectedTask,
             userId: user.id,
             userName: user.name,
             data: reportData,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            type: 'monthly'
         };
 
         // Save to localStorage or send to API
@@ -98,11 +100,11 @@ const DailyReport = ({ language }) => {
 
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label>{t.date}</label>
+                    <label>{t.month}</label>
                     <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        type="month"
+                        value={month}
+                        onChange={(e) => setMonth(e.target.value)}
                         required
                     />
                 </div>
@@ -212,4 +214,4 @@ const DailyReport = ({ language }) => {
     );
 };
 
-export default DailyReport;
+export default MonthlyReport;

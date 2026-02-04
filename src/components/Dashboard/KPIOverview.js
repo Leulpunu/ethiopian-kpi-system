@@ -25,9 +25,10 @@ ChartJS.register(
     Legend
 );
 
-const KPIOverview = ({ timeFrame, language }) => {
+const KPIOverview = ({ timeFrame, language, selectedOffice }) => {
     const [chartType, setChartType] = useState('bar');
     const [kpiData, setKpiData] = useState([]);
+    const [selectedKPIs, setSelectedKPIs] = useState([]);
 
     // Mock KPI data - in real app, this would come from API
     useEffect(() => {
@@ -38,6 +39,7 @@ const KPIOverview = ({ timeFrame, language }) => {
             { name: 'Customer Satisfaction', value: 88, target: 90, trend: [85, 86, 87, 88] },
         ];
         setKpiData(mockData);
+        setSelectedKPIs(mockData.map(kpi => kpi.name));
     }, [timeFrame]);
 
     const translations = {
@@ -65,12 +67,14 @@ const KPIOverview = ({ timeFrame, language }) => {
 
     const t = translations[language];
 
+    const filteredKpiData = kpiData.filter(kpi => selectedKPIs.includes(kpi.name));
+
     const chartData = {
-        labels: kpiData.map(kpi => t[kpi.name.toLowerCase().replace(' ', '')] || kpi.name),
+        labels: filteredKpiData.map(kpi => t[kpi.name.toLowerCase().replace(' ', '')] || kpi.name),
         datasets: [
             {
                 label: language === 'am' ? 'እሴት' : 'Value',
-                data: kpiData.map(kpi => kpi.value),
+                data: filteredKpiData.map(kpi => kpi.value),
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.6)',
                     'rgba(54, 162, 235, 0.6)',
@@ -112,6 +116,14 @@ const KPIOverview = ({ timeFrame, language }) => {
         }
     };
 
+    const handleKPIFilterChange = (kpiName) => {
+        setSelectedKPIs(prev =>
+            prev.includes(kpiName)
+                ? prev.filter(kpi => kpi !== kpiName)
+                : [...prev, kpiName]
+        );
+    };
+
     return (
         <div className="kpi-overview">
             <div className="chart-controls">
@@ -134,6 +146,19 @@ const KPIOverview = ({ timeFrame, language }) => {
                     >
                         {t.pieChart}
                     </button>
+                </div>
+                <div className="kpi-filters">
+                    <h4>{language === 'am' ? 'ኪፒአይ ማጣሪያዎች' : 'KPI Filters'}</h4>
+                    {kpiData.map((kpi, index) => (
+                        <label key={index} className="kpi-filter-checkbox">
+                            <input
+                                type="checkbox"
+                                checked={selectedKPIs.includes(kpi.name)}
+                                onChange={() => handleKPIFilterChange(kpi.name)}
+                            />
+                            {t[kpi.name.toLowerCase().replace(' ', '')] || kpi.name}
+                        </label>
+                    ))}
                 </div>
             </div>
             <div className="chart-container">

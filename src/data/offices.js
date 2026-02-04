@@ -237,6 +237,39 @@ export const officesData = [
                 ]
             }
         ]
+    },
+    {
+        id: 'public-service-hr-development',
+        name_am: 'የፐብሊክ ሰርቪስና የሰው ሀብት ልማት ጽ/ቤት',
+        name_en: 'Public Service and Human Resource Development Office',
+        icon: 'fa-graduation-cap',
+        color: '#9b59b6',
+        tasks: [
+            {
+                id: 'task-1',
+                number_am: 'ተግባር 1',
+                number_en: 'Task 1',
+                title_am: 'የ 5ሚሊዮን ኮደርስ የጨረሱ ባለሙያዎች',
+                title_en: 'Professionals Who Completed 5 Million Codes',
+                kpis: [
+                    { id: 'kpi-pshrd-1-1', name_am: 'የጨረሱ ባለሙያዎች', name_en: 'Completed Professionals', unit: 'ባለሙያዎች', target: 5000 }
+                ]
+            },
+            {
+                id: 'task-2',
+                number_am: 'ተግባር 2',
+                number_en: 'Task 2',
+                title_am: 'ፍቃድ የተሰጣቸው ባለሙያዎች',
+                title_en: 'Permitted Professionals',
+                kpis: [
+                    { id: 'kpi-pshrd-2-1', name_am: 'የአመት ፍቃድ', name_en: 'Annual Permission', unit: 'ፍቃዶች', target: 1000 },
+                    { id: 'kpi-pshrd-2-2', name_am: 'የወሊድ ፍቃድ', name_en: 'Maternity Permission', unit: 'ፍቃዶች', target: 500 },
+                    { id: 'kpi-pshrd-2-3', name_am: 'የእክል ፍቃድ', name_en: 'Study Permission', unit: 'ፍቃዶች', target: 300 },
+                    { id: 'kpi-pshrd-2-4', name_am: 'የህመም ፍቃድ', name_en: 'Sick Permission', unit: 'ፍቃዶች', target: 200 },
+                    { id: 'kpi-pshrd-2-5', name_am: 'የተለየ ፍቃድ', name_en: 'Special Permission', unit: 'ፍቃዶች', target: 100 }
+                ]
+            }
+        ]
     }
 ];
 
