@@ -1,23 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { officesData } from '../../data/offices';
 
 const QuickStats = ({ language, timeFrame, selectedOffice }) => {
     const [hoveredStat, setHoveredStat] = useState(null);
+    const [statsData, setStatsData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Filter offices based on selectedOffice
-    const filteredOffices = selectedOffice === 'all'
-        ? officesData
-        : officesData.filter(office => office.id === selectedOffice);
+    // Fetch stats data from API
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(`/api/reports/stats/${timeFrame}/${selectedOffice || 'all'}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch stats');
+                }
+                const data = await response.json();
+                setStatsData(data);
+                setError(null);
+            } catch (err) {
+                console.error('Error fetching stats:', err);
+                setError(err.message);
+                // Fallback to mock data if API fails
+                setStatsData({
+                    totalReports: 1247,
+                    activeOffices: 11,
+                    avgPerformance: 87,
+                    completionRate: 94
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Calculate stats based on timeFrame and selected office
-    const totalOffices = filteredOffices.length;
-    const totalTasks = filteredOffices.reduce((sum, office) => sum + office.tasks.length, 0);
-    const totalKPIs = filteredOffices.reduce((sum, office) =>
-        sum + office.tasks.reduce((taskSum, task) => taskSum + task.kpis.length, 0), 0);
+        fetchStats();
+    }, [timeFrame, selectedOffice]);
 
-    // Calculate previous period data for comparison
+    // Calculate previous period data for comparison (mock for now)
     const getPreviousPeriodData = () => {
-        // Mock previous period data - in real app, this would come from API
         const previousData = {
             daily: { reports: 45, performance: 85, completion: 92 },
             weekly: { reports: 320, performance: 86, completion: 93 },
@@ -29,18 +50,34 @@ const QuickStats = ({ language, timeFrame, selectedOffice }) => {
 
     const prevData = getPreviousPeriodData();
 
-    // Mock data for demonstration - in real app, this would come from API
+    // Calculate changes
+    const calculateChange = (current, previous) => {
+        if (previous === 0) return { value: '+0%', type: 'neutral' };
+        const change = ((current - previous) / previous) * 100;
+        const rounded = Math.round(change * 100) / 100;
+        return {
+            value: `${change >= 0 ? '+' : ''}${rounded}%`,
+            type: change >= 0 ? 'up' : 'down'
+        };
+    };
+
+    // Format numbers
+    const formatNumber = (num) => {
+        return num.toLocaleString();
+    };
+
+    // Build stats array
     const stats = [
         {
             id: 'total-reports',
             title_am: 'አጠቃላይ ሪፖርቶች',
             title_en: 'Total Reports',
-            value: '1,247',
-            change: '+12%',
-            changeType: 'up',
+            value: statsData ? formatNumber(statsData.totalReports) : '0',
+            change: calculateChange(statsData?.totalReports || 0, prevData.reports).value,
+            changeType: calculateChange(statsData?.totalReports || 0, prevData.reports).type,
             icon: 'fas fa-file-alt',
             color: '#3498db',
-            tooltip_am: `በዚህ ሳምንት ሪፖርቶች ተለጠፈ፣ ከቀድሞ ሳምንት በኩል ከ ${prevData.reports} ተለያየ`,
+            tooltip_am: `በዚህ ${timeFrame === 'daily' ? 'ቀን' : timeFrame === 'weekly' ? 'ሳምንት' : timeFrame === 'monthly' ? 'ወር' : 'አመት'} ሪፖርቶች ተለጠፈ፣ ከቀድሞ ${timeFrame === 'daily' ? 'ቀን' : timeFrame === 'weekly' ? 'ሳምንት' : timeFrame === 'monthly' ? 'ወር' : 'አመት'} በኩል ከ ${prevData.reports} ተለያየ`,
             tooltip_en: `Reports submitted this ${timeFrame}, compared to ${prevData.reports} last ${timeFrame}`,
             trend: [320, 340, 380, 420, 450, 480, 520]
         },
@@ -48,39 +85,39 @@ const QuickStats = ({ language, timeFrame, selectedOffice }) => {
             id: 'active-offices',
             title_am: 'ንቁ ቢሮዎች',
             title_en: 'Active Offices',
-            value: totalOffices.toString(),
-            change: '+2',
+            value: statsData ? statsData.activeOffices.toString() : '0',
+            change: '+2', // Mock change for now
             changeType: 'up',
             icon: 'fas fa-building',
             color: '#e74c3c',
-            tooltip_am: `ከጠቅላላ ${totalOffices} ቢሮዎች ንቁ ናቸው፣ ከቀድሞ ሳምንት በኩል 2 ተጨማሪ`,
-            tooltip_en: `${totalOffices} out of ${totalOffices} offices are active, +2 from last ${timeFrame}`,
+            tooltip_am: `${statsData?.activeOffices || 0} ቢሮዎች ንቁ ናቸው፣ በዚህ ${timeFrame === 'daily' ? 'ቀን' : timeFrame === 'weekly' ? 'ሳምንት' : timeFrame === 'monthly' ? 'ወር' : 'አመት'}`,
+            tooltip_en: `${statsData?.activeOffices || 0} offices are active this ${timeFrame}`,
             trend: [8, 9, 9, 10, 10, 11, 11]
         },
         {
             id: 'avg-performance',
             title_am: 'አማካይ አፈፃፀም',
             title_en: 'Avg Performance',
-            value: '87%',
-            change: '+5%',
-            changeType: 'up',
+            value: statsData ? `${statsData.avgPerformance}%` : '0%',
+            change: calculateChange(statsData?.avgPerformance || 0, prevData.performance).value,
+            changeType: calculateChange(statsData?.avgPerformance || 0, prevData.performance).type,
             icon: 'fas fa-chart-line',
             color: '#27ae60',
-            tooltip_am: `አማካይ አፈፃፀም በዚህ ሳምንት 87% ነበር፣ ከቀድሞ ሳምንት በኩል ከ ${prevData.performance}% ተለያየ`,
-            tooltip_en: `Average performance this ${timeFrame} is 87%, up from ${prevData.performance}% last ${timeFrame}`,
+            tooltip_am: `አማካይ አፈፃፀም በዚህ ${timeFrame === 'daily' ? 'ቀን' : timeFrame === 'weekly' ? 'ሳምንት' : timeFrame === 'monthly' ? 'ወር' : 'አመት'} ${statsData?.avgPerformance || 0}% ነበር፣ ከቀድሞ ${timeFrame === 'daily' ? 'ቀን' : timeFrame === 'weekly' ? 'ሳምንት' : timeFrame === 'monthly' ? 'ወር' : 'አመት'} በኩል ከ ${prevData.performance}% ተለያየ`,
+            tooltip_en: `Average performance this ${timeFrame} is ${statsData?.avgPerformance || 0}%, ${calculateChange(statsData?.avgPerformance || 0, prevData.performance).value} from ${prevData.performance}% last ${timeFrame}`,
             trend: [82, 83, 84, 85, 86, 86, 87]
         },
         {
             id: 'completion-rate',
             title_am: 'የመጠናቀቅ መጠን',
             title_en: 'Completion Rate',
-            value: '94%',
-            change: '-2%',
-            changeType: 'down',
+            value: statsData ? `${statsData.completionRate}%` : '0%',
+            change: calculateChange(statsData?.completionRate || 0, prevData.completion).value,
+            changeType: calculateChange(statsData?.completionRate || 0, prevData.completion).type,
             icon: 'fas fa-check-circle',
             color: '#9b59b6',
-            tooltip_am: `የመጠናቀቅ መጠን በዚህ ሳምንት 94% ነበር፣ ከቀድሞ ሳምንት በኩል ከ ${prevData.completion}% ተለያየ`,
-            tooltip_en: `Completion rate this ${timeFrame} is 94%, down from ${prevData.completion}% last ${timeFrame}`,
+            tooltip_am: `የመጠናቀቅ መጠን በዚህ ${timeFrame === 'daily' ? 'ቀን' : timeFrame === 'weekly' ? 'ሳምንት' : timeFrame === 'monthly' ? 'ወር' : 'አመት'} ${statsData?.completionRate || 0}% ነበር፣ ከቀድሞ ${timeFrame === 'daily' ? 'ቀን' : timeFrame === 'weekly' ? 'ሳምንት' : timeFrame === 'monthly' ? 'ወር' : 'አመት'} በኩል ከ ${prevData.completion}% ተለያየ`,
+            tooltip_en: `Completion rate this ${timeFrame} is ${statsData?.completionRate || 0}%, ${calculateChange(statsData?.completionRate || 0, prevData.completion).value} from ${prevData.completion}% last ${timeFrame}`,
             trend: [95, 94, 94, 93, 93, 93, 94]
         }
     ];

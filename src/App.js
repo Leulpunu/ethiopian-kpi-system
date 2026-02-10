@@ -50,8 +50,16 @@ function App() {
           <Route
             path="/annual-plan"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="admin">
                 <AnnualPlan language={language} toggleLanguage={toggleLanguage} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/view-annual-plan"
+            element={
+              <ProtectedRoute>
+                <ViewAnnualPlan language={language} toggleLanguage={toggleLanguage} />
               </ProtectedRoute>
             }
           />
