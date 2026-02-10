@@ -5,6 +5,7 @@ import Login from './components/Auth/Login';
 import Dashboard from './pages/Dashboard';
 import UnifiedReport from './pages/UnifiedReport';
 import AnnualPlan from './pages/AnnualPlan';
+import ViewAnnualPlan from './pages/ViewAnnualPlan';
 import AdminPanel from './pages/AdminPanel';
 
 import OfficeKPIs from './components/OfficeKPIs/OfficeKPIs';
