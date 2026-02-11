@@ -35,7 +35,7 @@ router.get('/office/:officeId', async (req, res) => {
 });
 
 // Get stats for dashboard
-router.get('/stats/:timeFrame/:selectedOffice?', async (req, res) => {
+router.get('/stats/:timeFrame/:selectedOffice', async (req, res) => {
   try {
     const { timeFrame, selectedOffice } = req.params;
     const currentYear = new Date().getFullYear();

@@ -22,13 +22,7 @@ const QuickStats = ({ language, timeFrame, selectedOffice }) => {
             } catch (err) {
                 console.error('Error fetching stats:', err);
                 setError(err.message);
-                // Fallback to mock data if API fails
-                setStatsData({
-                    totalReports: 1247,
-                    activeOffices: 11,
-                    avgPerformance: 87,
-                    completionRate: 94
-                });
+                setStatsData(null);
             } finally {
                 setLoading(false);
             }
